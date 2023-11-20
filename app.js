@@ -1,5 +1,7 @@
 const express = require('express');
 const mariadb = require("mariadb"); 
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = "ASADITO CON EL DUENDE"
 
 const pool = mariadb.createPool({ 
   host: "localhost", 
@@ -19,6 +21,26 @@ app.use(express.json());
 app.get('/', (req, res)=>{
     res.send('<h1>Bienvenid@ al servidor de Genova SRL</h1>');
 });
+
+app.post("/login", (req, res) =>{
+  const {username, password} = req.body;
+  if(username === "duende" && password === "cortez"){
+    const token = jwt.sign({username}, SECRET_KEY);
+    res.status(200).json({token});
+  } else {
+    res.status(401).json({message: "Usuario y/o contraseña incorrecto"})
+  }
+});
+
+app.use("/edificios", (req, res, next)=>{
+  try {
+    const decoded = jwt.verify(req.headers["access-token"], SECRET_KEY);
+    console.log(decoded);
+    next();
+  } catch(err){
+    res.status(401).json({message: "Usuario no autorizado"})
+  }
+})
 
 app.get('/edificios', async (req, res)=>{
     let conn;
